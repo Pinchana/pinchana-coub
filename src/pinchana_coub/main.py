@@ -15,6 +15,7 @@ from fastapi.responses import FileResponse
 from pinchana_core.models import ScrapeRequest, ScrapeResponse
 from pinchana_core.plugins import ScraperPlugin, registry
 from pinchana_core.storage import MediaStorage
+from pinchana_core.vpn import GluetunController
 
 from .scraper import (
     CoubClient,
@@ -31,6 +32,7 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter()
 client = CoubClient()
+gluetun = GluetunController()
 storage = MediaStorage(
     base_path=os.getenv("CACHE_PATH", "./cache"),
     max_size_gb=float(os.getenv("CACHE_MAX_SIZE_GB", "10.0")),
@@ -332,9 +334,14 @@ async def serve_media(permalink: str, filename: str):
 
 @router.get("/health")
 async def health_check():
+    vpn = await gluetun.get_vpn_status()
+    vpn_status = str(vpn.get("status", "unknown")).lower()
+    if gluetun.enabled and vpn_status != "running":
+        raise HTTPException(status_code=503, detail=f"VPN not ready: {vpn_status}")
     return {
         "status": "healthy",
         "service": "coub",
+        "vpn": vpn,
         "metadata_source": "coub_api_v2",
         "ffmpeg": shutil.which("ffmpeg") is not None and shutil.which("ffprobe") is not None,
     }

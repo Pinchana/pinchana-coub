@@ -25,7 +25,7 @@ was substantially longer. Run `research/inspect_live.py` to repeat that check.
 - `POST /scrape` with `{"url":"https://coub.com/view/PERMALINK"}`
 - `POST /inspect` for metadata without downloading media
 - `GET /media/coub/{permalink}/{filename}` inside the trusted gateway network
-- `GET /health`
+- `GET /health` verifies ffmpeg plus shared VPN and DNS readiness
 
 `/embed/{permalink}` URLs are also accepted because they identify the same
 public single-Coub resource.
@@ -44,4 +44,3 @@ copy `pinchana-core`:
 ```sh
 docker build --file pinchana-coub/Dockerfile --tag pinchana-coub:local .
 ```
-

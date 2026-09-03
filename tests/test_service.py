@@ -125,13 +125,33 @@ async def test_cached_response_skips_metadata_fetch(monkeypatch, tmp_path):
 
 @pytest.mark.asyncio
 async def test_health_reports_ffmpeg(monkeypatch):
+    async def vpn_status():
+        return {"status": "running", "dns": {"status": "running"}}
+
+    monkeypatch.setattr(main_module.gluetun, "enabled", True)
+    monkeypatch.setattr(main_module.gluetun, "get_vpn_status", vpn_status)
     monkeypatch.setattr(main_module.shutil, "which", lambda command: "/usr/bin/ffmpeg")
     assert await main_module.health_check() == {
         "status": "healthy",
         "service": "coub",
+        "vpn": {"status": "running", "dns": {"status": "running"}},
         "metadata_source": "coub_api_v2",
         "ffmpeg": True,
     }
+
+
+@pytest.mark.asyncio
+async def test_health_fails_when_vpn_dns_is_degraded(monkeypatch):
+    async def vpn_status():
+        return {"status": "degraded", "vpn_status": "running"}
+
+    monkeypatch.setattr(main_module.gluetun, "enabled", True)
+    monkeypatch.setattr(main_module.gluetun, "get_vpn_status", vpn_status)
+
+    with pytest.raises(main_module.HTTPException) as exc_info:
+        await main_module.health_check()
+
+    assert exc_info.value.status_code == 503
 
 
 async def async_value(value):
