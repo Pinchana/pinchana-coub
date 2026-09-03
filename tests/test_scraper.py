@@ -98,7 +98,12 @@ def test_missing_media_is_schema_error_not_not_found():
         parse_metadata(data, "abc123")
 
 
-@pytest.mark.parametrize("field", ["banned", "age_restricted", "age_restricted_by_admin"])
+def test_removed_metadata_is_not_found():
+    with pytest.raises(CoubNotFoundError):
+        parse_metadata(payload(banned=True), "abc123")
+
+
+@pytest.mark.parametrize("field", ["age_restricted", "age_restricted_by_admin"])
 def test_restricted_metadata_is_rejected(field):
     with pytest.raises(CoubRestrictedError):
         parse_metadata(payload(**{field: True}), "abc123")

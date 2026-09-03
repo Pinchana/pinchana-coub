@@ -103,7 +103,9 @@ def parse_metadata(payload: Any, requested_permalink: str) -> CoubMetadata:
     if not isinstance(payload, dict):
         raise CoubSchemaError("Coub metadata response is not a JSON object")
 
-    if payload.get("banned") is True or payload.get("visibility_type") not in {None, "public"}:
+    if payload.get("banned") is True:
+        raise CoubNotFoundError("This Coub was removed")
+    if payload.get("visibility_type") not in {None, "public"}:
         raise CoubRestrictedError("This Coub is private or restricted")
     if payload.get("age_restricted") is True or payload.get("age_restricted_by_admin") is True:
         raise CoubRestrictedError("This Coub is restricted")
@@ -206,7 +208,15 @@ class CoubClient:
             payload = response.json()
         except ValueError as exc:
             raise CoubSchemaError("Coub metadata API returned invalid JSON") from exc
-        return parse_metadata(payload, permalink)
+        try:
+            return parse_metadata(payload, permalink)
+        except CoubSchemaError:
+            logger.exception(
+                "coub_schema_change permalink=%s top_level_keys=%s",
+                permalink,
+                sorted(str(key) for key in payload)[:40] if isinstance(payload, dict) else None,
+            )
+            raise
 
     async def close(self) -> None:
         if self._owns_client and self._client is not None:
