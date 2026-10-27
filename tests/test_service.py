@@ -39,7 +39,7 @@ async def test_best_quality_sources_are_assembled(monkeypatch, tmp_path):
         output.write_bytes(b"ready-video")
         return "stream_copy"
 
-    monkeypatch.setattr(main_module.storage, "base_path", tmp_path)
+    monkeypatch.setattr(main_module.storage, "_base_path", tmp_path)
     monkeypatch.setattr(main_module.storage, "download", download)
     monkeypatch.setattr(main_module, "_loop_and_mux", mux)
     monkeypatch.setattr(main_module, "_probe_duration", lambda _path: async_value(59.0))
@@ -68,7 +68,7 @@ async def test_share_is_used_when_best_quality_mux_fails(monkeypatch, tmp_path):
     async def mux(*_args):
         raise main_module.MuxError("broken")
 
-    monkeypatch.setattr(main_module.storage, "base_path", tmp_path)
+    monkeypatch.setattr(main_module.storage, "_base_path", tmp_path)
     monkeypatch.setattr(main_module.storage, "download", download)
     monkeypatch.setattr(main_module, "_loop_and_mux", mux)
     monkeypatch.setattr(main_module, "_probe_duration", lambda _path: async_value(20.0))
@@ -87,7 +87,7 @@ async def test_video_is_saved_directly_when_audio_and_share_are_absent(monkeypat
         destination.write_bytes(b"media")
         return True
 
-    monkeypatch.setattr(main_module.storage, "base_path", tmp_path)
+    monkeypatch.setattr(main_module.storage, "_base_path", tmp_path)
     monkeypatch.setattr(main_module.storage, "download", download)
     monkeypatch.setattr(main_module, "_probe_duration", lambda _path: async_value(9.75))
 
@@ -98,7 +98,7 @@ async def test_video_is_saved_directly_when_audio_and_share_are_absent(monkeypat
 
 @pytest.mark.asyncio
 async def test_cached_response_skips_metadata_fetch(monkeypatch, tmp_path):
-    monkeypatch.setattr(main_module.storage, "base_path", tmp_path)
+    monkeypatch.setattr(main_module.storage, "_base_path", tmp_path)
     post_dir = tmp_path / "abc123"
     post_dir.mkdir()
     (post_dir / "video.mp4").write_bytes(b"cached")
